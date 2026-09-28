@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -26,20 +26,42 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.19.x'
           channel: 'stable'
 
-      - name: Generate Skeleton Project
+      - name: Re-create Android skeleton
         run: |
+          rm -rf android
           flutter create . --platforms=android --org=com.pixapulse.app
 
-      - name: Install Dependencies
+      - name: Restore Custom AndroidManifest
+        run: |
+          mkdir -p android/app/src/main
+          echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+            <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+            <uses-permission android:name="android.permission.BLUETOOTH" />
+            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.VIBRATE" />
+            <application android:label="PixaPulse" android:icon="@mipmap/ic_launcher">
+              <activity android:name=".MainActivity" android:exported="true" android:theme="@style/LaunchTheme" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode" android:hardwareAccelerated="true" android:windowSoftInputMode="adjustResize">
+                <intent-filter>
+                  <action android:name="android.intent.action.MAIN"/>
+                  <category android:name="android.intent.category.LAUNCHER"/>
+                </intent-filter>
+              </activity>
+            </application>
+          </manifest>' > android/app/src/main/AndroidManifest.xml
+
+      - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Android Release APK
+      - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
 
-      - name: Upload Release APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: PixaPulse-Audience-App

@@ -29,36 +29,49 @@ jobs:
           flutter-version: '3.19.x'
           channel: 'stable'
 
-      - name: Re-create Android skeleton
+      - name: Create Valid Android Skeleton
         run: |
-          rm -rf android
-          flutter create . --platforms=android --org=com.pixapulse.app
+          mkdir -p ../clean_project
+          cd ../clean_project
+          flutter create --platforms=android --org=com.pixapulse.app pixapulse_app
+          cp -r pixapulse_app/android $GITHUB_WORKSPACE/
+          cd $GITHUB_WORKSPACE
+          rm -rf ../clean_project
 
-      - name: Restore Custom AndroidManifest
+      - name: Inject Android Permissions
         run: |
-          mkdir -p android/app/src/main
-          echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-            <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-            <uses-permission android:name="android.permission.BLUETOOTH" />
-            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-            <uses-permission android:name="android.permission.CAMERA" />
-            <uses-permission android:name="android.permission.VIBRATE" />
-            <application android:label="PixaPulse" android:icon="@mipmap/ic_launcher">
-              <activity android:name=".MainActivity" android:exported="true" android:theme="@style/LaunchTheme" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode" android:hardwareAccelerated="true" android:windowSoftInputMode="adjustResize">
-                <intent-filter>
-                  <action android:name="android.intent.action.MAIN"/>
-                  <category android:name="android.intent.category.LAUNCHER"/>
-                </intent-filter>
-              </activity>
-            </application>
-          </manifest>' > android/app/src/main/AndroidManifest.xml
+          cat << 'EOF' > android/app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+              <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+              <uses-permission android:name="android.permission.BLUETOOTH" />
+              <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.CAMERA" />
+              <uses-permission android:name="android.permission.VIBRATE" />
+              <application
+                  android:label="PixaPulse"
+                  android:icon="@mipmap/ic_launcher">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:theme="@style/LaunchTheme"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:hardwareAccelerated="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
+      - name: Build Android Release APK
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK Artifact
